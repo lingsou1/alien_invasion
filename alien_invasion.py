@@ -2,6 +2,7 @@ import pygame
 import sys
 from settings import Settings
 from ship import Ship
+from bullet import Bullet
 
 
 
@@ -23,6 +24,8 @@ class AlienInvasion:
         pygame.display.set_caption("Alien Invasion")
         #导入飞船类,不能放在 'self.settings = Settings()  #导入设置类'  这句之后,会报错
         self.ship = Ship(self)
+        #创建存储子弹的编组
+        self.bullets = pygame.sprite.Group()
 
 
 
@@ -63,6 +66,9 @@ class AlienInvasion:
         #按Q退出
         elif event.key == pygame.K_q :
             sys.exit()
+        #按下空格键开火
+        elif event.key == pygame.K_SPACE :
+            self._fire_bullet()
 
 
 
@@ -83,12 +89,35 @@ class AlienInvasion:
             self.ship.moving_down = False
 
 
+
+    '''开火的设置,按下空格键将会执行的操作'''
+    def _fire_bullet(self):
+        '''创建一颗子弹并将其加入编组'''
+        if len(self.bullets) < self.settings.bullet_allowed :   #这句循环会控制子弹的数量在设置的数量
+            new_bullet = Bullet(self)
+            self.bullets.add(new_bullet)
+
+    def _update_bullets(self):
+        # 子弹的位置更新
+        self.bullets.update()
+
+        # 删除消失的子弹,否则会继续占用CPU的运算
+        for bullet in self.bullets.copy():
+            if bullet.rect.bottom <= 0:
+                self.bullets.remove(bullet)
+
+
+
+
+
     '''更新屏幕的代码'''
     def _update_screen(self):
 
         # 每次循环时都重新绘制屏幕
         self.screen.fill(self.settings.bg_color)
         self.ship.blitme()
+        for bullet in self.bullets.sprites():
+            bullet.draw_bullet()
         # 让最近绘制的屏幕可见
         pygame.display.flip()
 
@@ -97,10 +126,10 @@ class AlienInvasion:
     '''开始游戏的主循环'''
     def run_game(self):
         while True:
-            self.ship.blitme()
             self._check_events()    #检查事件
             self.ship.update()      #控制飞船的位移
-            self._update_screen()   #更新屏幕
+            self._update_bullets()  #更新子弹,一是删除过界的子弹,二是限制子弹数量
+            self._update_screen()  # 更新屏幕
 
 
 
